@@ -7,6 +7,7 @@ import torchvision.transforms.functional as TF
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 
+import cv2
 
 class CapchaDataset(Dataset):
     """
@@ -14,11 +15,11 @@ class CapchaDataset(Dataset):
     """
 
     def __init__(
-        self,
-        seq_len: Union[int, Tuple[int, int]],
-        img_h: int = 28,
-        split: str = "digits",
-        samples: int = None,
+            self,
+            seq_len: Union[int, Tuple[int, int]],
+            img_h: int = 32,
+            split: str = "digits",
+            samples: int = None,
     ):
         self.emnist_dataset = datasets.EMNIST(
             "./EMNIST", split=split, train=True, download=True
@@ -32,9 +33,9 @@ class CapchaDataset(Dataset):
             self._min_seq_len = seq_len
             self._max_seq_len = seq_len
         elif (
-            isinstance(seq_len, Tuple)
-            and len(seq_len) == 2
-            and isinstance(seq_len[0], int)
+                isinstance(seq_len, Tuple)
+                and len(seq_len) == 2
+                and isinstance(seq_len[0], int)
         ):
             self._min_seq_len = seq_len[0]
             self._max_seq_len = seq_len[1]
@@ -55,6 +56,7 @@ class CapchaDataset(Dataset):
             img = TF.rotate(img, -90, fill=[0.0])
             img = TF.hflip(img)
             img = transforms.ToTensor()(img).numpy()
+            img = np.asarray([cv2.resize(img[0], (32, 32))])
             transformed_images.append(img)
         images = np.array(transformed_images)
         images = np.hstack(
@@ -63,7 +65,7 @@ class CapchaDataset(Dataset):
         full_img = np.zeros(shape=(self.img_h, self._max_seq_len * self.img_h)).astype(
             np.float32
         )
-        full_img[:, 0 : images.shape[1]] = images
+        full_img[:, 0: images.shape[1]] = images
         return full_img
 
     def __getitem__(self, idx):
@@ -77,7 +79,7 @@ class CapchaDataset(Dataset):
         random_digits_labels = self.emnist_dataset.targets[random_indices]
         labels = torch.zeros((1, self._max_seq_len))
         labels = torch.fill(labels, self.blank_label)
-        labels[0, 0 : len(random_digits_labels)] = random_digits_labels
+        labels[0, 0: len(random_digits_labels)] = random_digits_labels
         x = self.__preprocess(random_images)
         y = labels.numpy().reshape(self._max_seq_len)
         return x, y

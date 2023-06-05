@@ -13,12 +13,12 @@ from dataset import CapchaDataset
 from model import CRNN
 
 gpu = torch.device("cuda")
-epochs = 5
+epochs = 20
 
-gru_hidden_size = 128
+gru_hidden_size = 256
 gru_num_layers = 2
 cnn_output_height = 4
-cnn_output_width = 32
+cnn_output_width = 9
 digits_per_sequence = 5
 
 model_save_path = "./checkpoints"
@@ -39,7 +39,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader) -> None:
         x_train = x_train.view(x_train.shape[0], 1, x_train.shape[1], x_train.shape[2])
         optimizer.zero_grad()
         y_pred = model(x_train.cuda())
-        y_pred = y_pred.permute(1, 0, 2)  # y_pred.shape == torch.Size([64, 32, 11])
         input_lengths = torch.IntTensor(batch_size).fill_(cnn_output_width)
         target_lengths = torch.IntTensor([len(t) for t in y_train])
         loss = criterion(y_pred, y_train, input_lengths, target_lengths)
@@ -91,7 +90,6 @@ def evaluate(model, val_loader) -> float:
             batch_size = x_val.shape[0]
             x_val = x_val.view(x_val.shape[0], 1, x_val.shape[1], x_val.shape[2])
             y_pred = model(x_val.cuda())
-            y_pred = y_pred.permute(1, 0, 2)
             input_lengths = torch.IntTensor(batch_size).fill_(cnn_output_width)
             target_lengths = torch.IntTensor([len(t) for t in y_val])
             criterion(y_pred, y_val, input_lengths, target_lengths)
@@ -117,7 +115,6 @@ def test_model(model, test_ds, number_of_test_imgs: int = 10):
     y_pred = model(
         x_test.view(x_test.shape[0], 1, x_test.shape[1], x_test.shape[2]).cuda()
     )
-    y_pred = y_pred.permute(1, 0, 2)
     _, max_index = torch.max(y_pred, dim=2)
     for i in range(x_test.shape[0]):
         raw_prediction = list(max_index[:, i].detach().cpu().numpy())
@@ -145,7 +142,7 @@ if __name__ == "__main__":
     model = CRNN(
         cnn_output_height, gru_hidden_size, gru_num_layers, train_ds.num_classes
     ).to(gpu)
-    # model.load_state_dict(torch.load("./checkpoints/checkpoint_5.pt"))
+    # model.load_state_dict(torch.load("./checkpoints/checkpoint_20.pt"))
 
     criterion = nn.CTCLoss(
         blank=train_ds.blank_label, reduction="mean", zero_infinity=True
