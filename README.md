@@ -9,3 +9,6 @@ docker build -t ocr .
 ```
 python demo.py
 ```
+
+### Метрика
+На 20 эпохе получено значение метрики Accuracy = 0.98 на тесте. Обучение представлено в ноутбуке Notebooks/OCRTask4.ipynb
