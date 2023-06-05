@@ -7,8 +7,5 @@ docker build -t ocr .
 ```
 2. Внутри контейнера запустить обучение
 ```
-python train.py
+python demo.py
 ```
-
-### Исходный проект:
-* https://github.com/dredwardhyde/crnn-ctc-loss-pytorch
